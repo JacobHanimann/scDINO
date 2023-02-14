@@ -1,0 +1,46 @@
+meta:
+  name_of_run: "name_of_run"
+  output_dir: "outputdir"
+  dataset_dir: "datasetdir"
+  test_datasetsplit_fraction: 0.1
+  seed: 40 # should match scDINO seed if you want to use the same train/test split
+  images_are_RGB: False
+  channel_dict: { 0: "APC", 1: "BF", 2: "DAPI", 3: "GREEN", 4: "PE" }
+  selected_channel_combination_per_run: ["01234", "0", "1", "2", "3", "4"]
+  center_crop: 0 #0 is no center crop
+compute_cls_features:
+  use_weighted_sampler: False # if False, valdataset is used defined in meta
+  class_weights: "[0.1, 0.1, 0.1, 0.1, 0.1]" # only used if use_weighted_sampler is True, length of list must be equal to number of classes
+  num_samples: 5000 # only used if use_weighted_sampler is True
+  normalize: True
+  parse_mean_std_from_file: True
+  mean_std_file_location: "dir/mean_and_std_of_dataset.txt"
+  norm_per_channel: "[(x,x,x,x,x)(x,x,x,x,x)]" #only used if parse_mean_std_from_file is False
+  use_cuda: True
+  num_gpus: 1
+  batch_size_per_gpu: 24
+  num_workers: 8
+  pretrained_weights: "dir_to_pretrained_weights"
+  read_model_arch_dynamically: False
+  arch: "vit_small" #only used if read_model_arch_dynamically is False
+  patch_size: 8 #only used if read_model_arch_dynamically is False
+  use_mean_patch_embedding: False
+  use_custom_embedding_map: False # if True, the embedding map is defined by the user below
+  custom_embedding_map: "{0:2, 1:2, 2:2, 3:2, 4:2}" #first is the channel of the input image and the second is the channel of the embedding
+  images_are_RGB: False
+  resize: True
+  resize_length: 224 #only used if resize is True
+attention_visualisation:
+  num_images_per_class: 1
+kNN:
+  global:
+    n_neighbors: [5, 10, 50, 100, 200, 500]
+    temperature: 0.1
+umap_eval:
+  n_neighbors: 30
+  min_dist: 0.4
+  n_components: 2
+  metric: euclidean
+  spread: 1.1
+  epochs: 100
+  topometry_plots: False

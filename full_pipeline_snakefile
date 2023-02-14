@@ -1,0 +1,178 @@
+import os
+import re
+import ast
+
+#### FUNCTIONS ####
+def get_channel_name_combi(channel_combi_num, channel_dict):
+    name_of_channel_combi = ""
+    for channel_number in iter(str(channel_combi_num)):
+        name_of_channel_combi = "_".join([name_of_channel_combi, channel_dict[int(channel_number)]])
+    return name_of_channel_combi
+
+def get_channel_number_combi(channel_names, channel_dict):
+    channel_combi = ""
+    for channel_name in channel_names.split('_'):
+        for key, value in channel_dict.items():
+            if value == channel_name:
+                channel_combi = "".join([channel_combi, str(key)])
+    return channel_combi
+
+def get_channel_name_combi_list(selected_channels, channel_dict):
+    channel_names = []
+    for channel_combi in selected_channels:
+        channel_names.append(get_channel_name_combi(channel_combi,channel_dict))
+    return channel_names
+
+def save_config_file(config_file_path, save_dir):
+    os.makedirs(save_dir, exist_ok=True)
+    with open(config_file_path, 'r') as f:
+        config_file = f.read()
+    with open(save_dir+"/config_file_of_run.yaml", 'w') as f:
+        f.write(config_file)
+
+def load_norm_per_channel(filepath_mean_and_std_of_dataset):
+    with open(filepath_mean_and_std_of_dataset) as f:
+        norm_per_channel_json = json.load(f)
+        norm_per_channel = str([tuple(norm_per_channel_json['mean']), tuple(norm_per_channel_json['std'])])
+        return norm_per_channel 
+
+
+#### PARSING ####
+name_of_run = config['meta']['name_of_run']
+sk_save_dir = config['meta']['output_dir']
+ViT_name = config['train_scDINO']['dino_vit_name']
+epochs= int(config['train_scDINO']['epochs']+1)
+save_dir_downstream_run = sk_save_dir+"/"+name_of_run
+selected_channels = config['meta']['selected_channel_combination_per_run']
+channel_dict = config['meta']['channel_dict']
+saveckp_freq = int(config['train_scDINO']['saveckp_freq'])
+epoch_nums = [epoch_num*saveckp_freq for epoch_num in range(0,(int(epochs/saveckp_freq)))]
+if (epochs-1) not in epoch_nums: 
+    epoch_nums.append(epochs-1)
+print('Epochs for downstream analyses:', epoch_nums)
+save_config_file( "configs/scDINO_full_pipeline.yaml", save_dir_downstream_run)
+
+#scDINO-ViTs_path_for_extract_labels
+scDINO_ViTs_for_path_extract_labels = f"{save_dir_downstream_run}/scDINO_ViTs/{ViT_name}_channel{get_channel_name_combi_list(selected_channels, channel_dict)[0]}/checkpoint0.pth"
+
+##### RULES #####
+rule all:
+    input:
+        expand("{save_dir_downstream_run}/{ViT_name}_channel{channel_names}_analyses/kNN/global_kNN.txt", save_dir_downstream_run=save_dir_downstream_run, ViT_name=ViT_name, channel_names=get_channel_name_combi_list(selected_channels, channel_dict)),
+        expand("{save_dir_downstream_run}/{ViT_name}_channel{channel_names}_analyses/embedding_plots/epoch{epoch_num}_umap.png",save_dir_downstream_run=save_dir_downstream_run, epoch_num=epoch_nums,  ViT_name=ViT_name,channel_names=get_channel_name_combi_list(selected_channels, channel_dict)),
+        expand("{save_dir_downstream_run}/{ViT_name}_channel{channel_names}_analyses/attention_images/epoch{epoch_num}/run_log.txt",save_dir_downstream_run=save_dir_downstream_run, epoch_num=epoch_nums,  ViT_name=ViT_name,channel_names=get_channel_name_combi_list(selected_channels, channel_dict)),
+
+rule visualise_attention:
+    output:
+        expand("{save_dir_downstream_run}/{ViT_name}_channel{channel_names}_analyses/attention_images/epoch{epoch_num}/run_log.txt", save_dir_downstream_run="{save_dir_downstream_run}", ViT_name="{ViT_name}", channel_names="{channel_names}", epoch_num="{epoch_num}")
+    input:
+        path_to_model = "{save_dir_downstream_run}/scDINO_ViTs/{ViT_name}_channel{channel_names}/checkpoint{epoch_num}.pth",
+        norm_per_channel_file = f"{save_dir_downstream_run}/mean_and_std_of_dataset.txt"
+    params: 
+        script_params = {**config['meta'], **config['train_scDINO']['hyperparameters'],**config['downstream_analyses']['compute_cls_features'], **config['downstream_analyses']['attention_visualisation'], **{"scDINO_full_pipeline":True},**config['train_scDINO'],**config['train_scDINO']['hyperparameters']},
+        selected_channel_indices= lambda wildcards: get_channel_number_combi(wildcards.channel_names, channel_dict),
+        full_ViT_name = lambda wildcards: f"{ViT_name}_channel{wildcards.channel_names}"
+    resources:
+        mem_mb = 4000,
+        cores = 4, 
+        gpus = 1
+    shell:
+        'python pyscripts/visualise_attention.py --full_ViT_name {params.full_ViT_name} --selected_channels {params.selected_channel_indices} --pretrained_weights {input.path_to_model} --norm_per_channel_file {input.norm_per_channel_file} --parse_params """{params.script_params}"""'
+
+rule plot_in_2D:
+    input:
+        features = expand("{save_dir_downstream_run}/{ViT_name}_channel{channel_names}_analyses/CLS_features/epoch{epoch_num}_features.csv", save_dir_downstream_run="{save_dir_downstream_run}", ViT_name="{ViT_name}", channel_names="{channel_names}", epoch_num="{epoch_num}"),
+        class_labels = "{save_dir_downstream_run}/class_labels.csv"
+    output:
+        "{save_dir_downstream_run}/{ViT_name}_channel{channel_names}_analyses/embedding_plots/epoch{epoch_num}_umap.png"
+    resources:
+        mem_mb = 4000,
+        cores = 4,
+    params:
+        scDINO_full_pipeline = True,
+        topometry_plots = config['downstream_analyses']['umap_eval']['topometry_plots'],
+    script:
+        'pyscripts/plot_in_2D.py'
+
+rule calc_global_kNN:
+    input:
+        features = expand("{save_dir_downstream_run}/{ViT_name}_channel{channel_names}_analyses/CLS_features/epoch{epoch_num}_features.csv", save_dir_downstream_run=save_dir_downstream_run, epoch_num=epoch_nums, ViT_name="{ViT_name}",channel_names="{channel_names}"),
+        class_labels = "{save_dir_downstream_run}/class_labels.csv"
+    output: 
+        "{save_dir_downstream_run}/{ViT_name}_channel{channel_names}_analyses/kNN/global_kNN.txt"
+    resources:
+        mem_mb = 4000,
+        cores = 4,
+    params:
+        scDINO_full_pipeline = True,
+        run_names = expand("{save_dir_downstream_run}/{ViT_name}_channel{channel_names}_epoch{epoch_num}", save_dir_downstream_run=save_dir_downstream_run, epoch_num=epoch_nums, ViT_name="{ViT_name}",channel_names="{channel_names}"),
+        save_dir= expand("{save_dir_downstream_run}/{ViT_name}_channel{channel_names}_analyses/", save_dir_downstream_run=save_dir_downstream_run, ViT_name="{ViT_name}",channel_names="{channel_names}"),
+    script:
+        'pyscripts/global_kNN.py'
+
+rule extract_labels:
+    input:
+        path_to_model = scDINO_ViTs_for_path_extract_labels
+    output:
+        labels = expand("{save_dir_downstream_run}/{file_name}.csv", file_name=['class_labels','image_paths'], save_dir_downstream_run="{save_dir_downstream_run}")
+    params: 
+        script_params = {**config['meta'], **config['downstream_analyses']['compute_cls_features'], **{"scDINO_full_pipeline":True},**config['train_scDINO'],**config['train_scDINO']['hyperparameters']},
+        num_gpus = config['downstream_analyses']['compute_cls_features']['num_gpus'],
+        selected_channel_indices= selected_channels[0],
+        full_ViT_name = scDINO_ViTs_for_path_extract_labels
+    resources:
+        gpus = config['downstream_analyses']['compute_cls_features']['num_gpus'],
+        mem_mb = 4000,
+        cores = 4,
+    shell: 
+        'python -m torch.distributed.launch --nproc_per_node {params.num_gpus} pyscripts/extract_image_labels.py --full_ViT_name {params.full_ViT_name} --selected_channels {params.selected_channel_indices} --pretrained_weights {input.path_to_model} --parse_params """{params.script_params}"""'
+
+
+rule compute_cls_features:
+    input:
+        path_to_model = "{save_dir_downstream_run}/scDINO_ViTs/{ViT_name}_channel{channel_names}/checkpoint{epoch_num}.pth",
+        norm_per_channel_file = f"{save_dir_downstream_run}/mean_and_std_of_dataset.txt"
+    output:
+        features = expand("{save_dir_downstream_run}/{ViT_name}_channel{channel_names}_analyses/CLS_features/epoch{epoch_num}_features.csv", save_dir_downstream_run="{save_dir_downstream_run}", ViT_name="{ViT_name}", channel_names="{channel_names}", epoch_num="{epoch_num}"),
+    params: 
+        script_params = {**config['meta'], **config['downstream_analyses']['compute_cls_features'], **{"scDINO_full_pipeline":True},**config['train_scDINO'],**config['train_scDINO']['hyperparameters']},
+        num_gpus = config['downstream_analyses']['compute_cls_features']['num_gpus'],
+        selected_channel_indices= lambda wildcards: get_channel_number_combi(wildcards.channel_names, channel_dict),
+        full_ViT_name = lambda wildcards: f"{ViT_name}_channel{wildcards.channel_names}_epoch{wildcards.epoch_num}"
+    resources:
+        gpus = config['downstream_analyses']['compute_cls_features']['num_gpus'],
+        mem_mb =config['downstream_analyses']['compute_cls_features']['num_workers'] * 7000,
+        cores = config['downstream_analyses']['compute_cls_features']['num_workers'],
+    shell: 
+        'python -m torch.distributed.launch --nproc_per_node {params.num_gpus} pyscripts/compute_CLS_features.py --full_ViT_name {params.full_ViT_name} --selected_channels {params.selected_channel_indices} --norm_per_channel_file {input.norm_per_channel_file} --pretrained_weights {input.path_to_model} --parse_params """{params.script_params}"""'
+
+rule train_scDINO_ViTs:
+    output:
+        expand("{save_dir_downstream_run}/scDINO_ViTs/{ViT_name}_channel{channel_names}/checkpoint{epoch_num}.pth", save_dir_downstream_run=save_dir_downstream_run, ViT_name=ViT_name, channel_names="{channel_names}", epoch_num= epoch_nums)
+    input:
+        norm_per_channel_file = f"{save_dir_downstream_run}/mean_and_std_of_dataset.txt"
+    params:
+        script_params = {**config['train_scDINO'],**config['train_scDINO']['hyperparameters'], **config['meta']},
+        epochs = epochs, 
+        num_gpus = config['train_scDINO']['num_gpus'],
+        selected_channel_indices= lambda wildcards: get_channel_number_combi(wildcards.channel_names, channel_dict), 
+        full_ViT_name = lambda wildcards: f"{ViT_name}_channel{wildcards.channel_names}"
+    resources:
+        gpus = config['train_scDINO']['num_gpus'], 
+        mem_mb = config['train_scDINO']['num_workers']*7000,
+        cores =config['train_scDINO']['num_workers'],
+    shell:
+        'python -m torch.distributed.launch --nproc_per_node {params.num_gpus} pyscripts/main_dino.py --epochs {params.epochs} --selected_channels {params.selected_channel_indices} --norm_per_channel {input.norm_per_channel_file} --full_ViT_name {params.full_ViT_name} --parse_params """{params.script_params}"""'
+
+rule calc_mean_and_std_of_dataset:
+    output:
+        f"{save_dir_downstream_run}/mean_and_std_of_dataset.txt"
+    params:
+        data_dir = config['meta']['dataset_dir'], 
+        fraction_for_mean_std = config['train_scDINO']['fraction_for_mean_std_calc'],
+        center_crop = config['meta']['center_crop']
+    resources:
+        mem_mb = 4000,
+        cores = 4,
+    script:
+        'pyscripts/mean_std_dataset.py'
