@@ -77,8 +77,8 @@ save_config_file("configs/scDINO_full_pipeline.yaml", save_dir_downstream_run)
 rule all:
     input:
         expand("{save_dir_downstream_run}/kNN/global_kNN.txt", save_dir_downstream_run=save_dir_downstream_run),
-        # expand("{save_dir_downstream_run}/embedding_plots/channel{channel_names}_model_{model_name}_umap.png", save_dir_downstream_run=save_dir_downstream_run, channel_names=get_channel_name_combi_list(selected_channels, channel_dict), model_name=model_name), 
-        # expand("{save_dir_downstream_run}/attention_images/channel{channel_names}_model_{model_name}/run_log.txt", save_dir_downstream_run=save_dir_downstream_run, channel_names=get_channel_name_combi_list(selected_channels, channel_dict), model_name=model_name),
+        expand("{save_dir_downstream_run}/embedding_plots/channel{channel_names}_model_{model_name}_umap.png", save_dir_downstream_run=save_dir_downstream_run, channel_names=get_channel_name_combi_list(selected_channels, channel_dict), model_name=model_name), 
+        expand("{save_dir_downstream_run}/attention_images/channel{channel_names}_model_{model_name}/run_log.txt", save_dir_downstream_run=save_dir_downstream_run, channel_names=get_channel_name_combi_list(selected_channels, channel_dict), model_name=model_name),
 
 rule visualise_attention:
     output:
