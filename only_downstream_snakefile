@@ -65,6 +65,7 @@ selected_channels = config['meta']['selected_channel_combination_per_run']
 channel_dict = config['meta']['channel_dict']
 models_repo = absoluteFilePaths(config['compute_cls_features']['pretrained_weights']) #only used when train_scDino_Vit is False in the config file
 model_name = extract_model_name(models_repo)
+
 print('model list:')
 for model in model_name:
     print(model)
