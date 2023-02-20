@@ -324,7 +324,8 @@ if __name__ == '__main__':
     #compute CLS features and save them
     features, labels, image_names = extract_and_save_feature_pipeline(args)
 
-    # save features and labels
+
+    # save features and labels as files
     if dist.get_rank() == 0:
 
         #translate channel indexes to channel names
@@ -339,22 +340,10 @@ if __name__ == '__main__':
         channel_names = get_channel_name_combi(selected_channel_str, args.channel_dict)
 
         if args.scDINO_full_pipeline:
-            split_string = args.full_ViT_name.split("_epoch")
-            ViT_name = split_string[0]
-            epoch_num = split_string[1]
-            cls_directory = os.path.join(args.output_dir,args.name_of_run, f"{ViT_name}_analyses/CLS_features")
-            epoch_path = os.path.join(cls_directory, f"epoch{epoch_num}")
-            print("epoch path: ", epoch_path)
-            print("cls directory: ", cls_directory)
+            path = os.path.join(args.output_dir,args.name_of_run)+"/"
           
-        else:
-            cls_directory = os.path.join(args.output_dir,args.name_of_run,"CLS_features")
-            model_name = args.pretrained_weights.split('/')[-1].split('.')[0]
-            epoch_path = os.path.join(cls_directory, f"channel{channel_names}_model_{model_name}")
-        
-        np.savetxt(f"{epoch_path}_features.csv", features.cpu().numpy(), delimiter=",")
-        with open(os.path.join(cls_directory, "run_log.txt"), "w") as f:
-            f.write(f"computing features with seed {args.seed}: \n")
-            f.write("parameters: \n")
-            for arg in vars(args):
-                f.write(f"{arg} : {getattr(args, arg)} \n")
+        else: 
+             path = os.path.join(args.output_dir,args.name_of_run, f"CLS_features/")
+            
+        np.savetxt(f"{path}class_labels.csv", labels, delimiter=",", fmt="%s")
+        np.savetxt(f"{path}image_paths.csv", image_names, delimiter=",", fmt="%s")

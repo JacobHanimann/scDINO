@@ -29,7 +29,10 @@ for run_index, features in enumerate(snakemake.input["features"]):
             labels_numbers = le.transform(labels)
             return labels_numbers
 
-    #split into train and test and convert to torch tensors
+    indices = np.arange(features.shape[0])
+    np.random.shuffle(indices)
+    features = features[indices]
+    class_labels = np.array(class_labels)[indices]
     train_features = torch.from_numpy(features[:int(features.shape[0]*0.8),:])
     train_labels = torch.from_numpy(label_to_number(class_labels[:int(features.shape[0]*0.8)]))
     test_features = torch.from_numpy(features[int(features.shape[0]*0.8):,:])
@@ -72,7 +75,7 @@ for run_index, features in enumerate(snakemake.input["features"]):
             # find the predictions that match the target
             correct = predictions.eq(targets.data.view(-1, 1))
             top1 = top1 + correct.narrow(1, 0, 1).sum().item()
-            top2 = top2 + correct.narrow(1, 0, min(2, k)).sum().item()
+            top2 = top2 + correct.narrow(1, 0, min(2, k)).sum().item()  #dependent on number of classes
             total += targets.size(0)
         top1 = top1 * 100.0 / total
         top2 = top2 * 100.0 / total
@@ -85,6 +88,8 @@ for run_index, features in enumerate(snakemake.input["features"]):
                 top1, top2 = knn_classifier(train_features, train_labels,
                     test_features, test_labels, k, temperature, num_classes=num_classes)
                 f.write(f"{k}-NN Top1: {round(top1,2)}, Top2: {round(top2,2)}\n")
+                #delete variables
+                del top1, top2
             except Exception as e:
-                f.write("Error: "+str(e)+"\n")                
+                f.write("Error: "+str(e)+"\n")             
         f.write("--------------------------------------------------\n")

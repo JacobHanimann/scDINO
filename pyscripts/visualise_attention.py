@@ -155,7 +155,8 @@ if args.read_model_arch_dynamically:
 device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 # build model
 selected_channels = list(map(int, args.selected_channels))
-model = vits.__dict__[args.arch](patch_size=args.patch_size, num_classes=0, in_chans=len(selected_channels))
+num_in_chans_pretrained = utils.get_pretrained_weights_in_chans(args.pretrained_weights)
+model = vits.__dict__[args.arch](patch_size=args.patch_size, num_classes=0, in_chans=num_in_chans_pretrained)
 for p in model.parameters():
     p.requires_grad = False
 model.eval()
@@ -188,6 +189,12 @@ def build_weight_emb(embedding_seq, model):
     weights = weights[:,embedding_seq,:,:]
     model.patch_embed.proj.weight = nn.Parameter(weights)
     return model
+
+if not args.use_mean_patch_embedding and not args.use_custom_embedding_map:
+    if len(selected_channels) != num_in_chans_pretrained:
+        print(f"Error: Number of channels in the dataset ({len(selected_channels)}) and pretrained weights ({num_in_chans_pretrained}) are different")
+        print(f"Use --use_mean_patch_embedding or --use_custom_embedding_map to adjust the number of channels")
+        sys.exit(1)
 
 if not args.images_are_RGB:
     if args.use_mean_patch_embedding:
@@ -331,7 +338,13 @@ for class_name, class_number in classes_dict.items():
             w_featmap = img.shape[-2] // args.patch_size
             h_featmap = img.shape[-1] // args.patch_size
 
-            attentions = model.get_last_selfattention(img.to(device))
+            try:
+                attentions = model.get_last_selfattention(img.to(device))
+            ## print the erorr message
+            except Exception as e:
+                print("Error in getting attention images for image.shape: ", img.shape)
+                print(e)
+                continue
 
             nh = attentions.shape[1] # number of head
 
@@ -371,7 +384,10 @@ for class_name, class_number in classes_dict.items():
         
                 for j in range(nh):
                     display_instances(image, th_attn[j], fname=os.path.join(random_cell_dir, "mask_th" + str(args.threshold) + "_head" + str(j)+".png"), blur=False)
-
+            #free gpu memory
+            del img
+            del attentions
+    
 #creating log file
 with open(os.path.join(run_directory, "run_log.txt"), "w") as f:
     f.write(f"successfully computed attention visualisation with following parameters and random seed {args.seed}: \n")
