@@ -112,7 +112,8 @@ rule calc_global_kNN:
 
 rule extract_labels:
     input:
-        path_to_model = scDINO_ViTs_for_path_extract_labels
+        path_to_model = scDINO_ViTs_for_path_extract_labels, 
+        norm_per_channel_file = f"{save_dir_downstream_run}/mean_and_std_of_dataset.txt"
     output:
         labels = expand("{save_dir_downstream_run}/{file_name}.csv", file_name=['class_labels','image_paths'], save_dir_downstream_run="{save_dir_downstream_run}")
     params: 
@@ -125,7 +126,7 @@ rule extract_labels:
         mem_mb = 4000,
         cores = 4,
     shell: 
-        'python -m torch.distributed.launch --nproc_per_node {params.num_gpus} pyscripts/extract_image_labels.py --full_ViT_name {params.full_ViT_name} --selected_channels {params.selected_channel_indices} --pretrained_weights {input.path_to_model} --parse_params """{params.script_params}"""'
+        'python -m torch.distributed.launch --nproc_per_node {params.num_gpus} pyscripts/extract_image_labels.py --full_ViT_name {params.full_ViT_name} --norm_per_channel_file {input.norm_per_channel_file} --selected_channels {params.selected_channel_indices} --pretrained_weights {input.path_to_model} --parse_params """{params.script_params}"""'
 
 
 rule compute_cls_features:
