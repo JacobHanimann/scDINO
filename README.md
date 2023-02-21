@@ -133,6 +133,10 @@ To quantitatively evaluate label-specific clustering, we can run a k-NN evaluati
 
 ### Visualisation of the CLS Token-based Self-Attention Mechanism of ss-ViTs
 
+<div align="center">
+  <img width="100%" alt="DINO illustration" src=".github/attn_heads_vitsmall8_iPSCS.gif">
+</div>
+
 To visualise the CLS token-based self-attention of the ss-ViTs, attention maps can be generated for each image class.
 Our default settings randomly pick 1 image per image class in the given dataset. The attention maps are saved in the **attention_maps** subfolder of the _output_dir_ in the results folder. Each attention head is saved as a separate image. Additionally, for each original multi-channel input image, all channels are separately saved as a single image.
 
