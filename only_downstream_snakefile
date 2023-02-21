@@ -1,6 +1,8 @@
+#Snakefile for downstream analysis
 import os
 import re
 import ast
+import yaml
 
 #### FUNCTIONS ####
 def absoluteFilePaths(directory):
@@ -46,13 +48,12 @@ def load_norm_per_channel(config):
     else:
         return None
 
-def save_config_file(config_file_path, save_dir):
+def save_config_file(config, save_dir):
     os.makedirs(save_dir, exist_ok=True)
-    with open(config_file_path, 'r') as f:
-        config_file = f.read()
-    with open(save_dir+"/config_file_of_run.yaml", 'w') as f:
-        f.write(config_file)
-
+    with open(f"{save_dir}/run_config_dump.json", "w") as f:
+        json.dump(config, f)
+    with open(f"{save_dir}/run_config_dump.yaml", "w") as f:
+        yaml.dump(config, f)
 
 #### CONFIG FILE ####
 configfile: "run_config.yaml"
@@ -63,16 +64,13 @@ sk_save_dir = config['meta']['output_dir']
 save_dir_downstream_run = sk_save_dir+"/"+name_of_run
 selected_channels = config['meta']['selected_channel_combination_per_run']
 channel_dict = config['meta']['channel_dict']
-models_repo = absoluteFilePaths(config['compute_cls_features']['pretrained_weights']) #only used when train_scDino_Vit is False in the config file
+models_repo = absoluteFilePaths(config['compute_cls_features']['pretrained_weights'])
 model_name = extract_model_name(models_repo)
-
 print('model list:')
 for model in model_name:
     print(model)
-print('channel list:')
-for channel in selected_channels:
-    print(channel)
-save_config_file("configs/scDINO_full_pipeline.yaml", save_dir_downstream_run)
+print('channel list:', selected_channels)
+save_config_file(config, save_dir_downstream_run)
 
 ##### RULES #####
 rule all:
@@ -91,8 +89,7 @@ rule visualise_attention:
         selected_channel_indices= lambda wildcards: get_channel_number_combi(wildcards.channel_names, channel_dict), 
     resources:
         mem_mb = 4000,
-        cores = 4, 
-        gpus =1
+        cores = 4,
     shell:
         'python pyscripts/visualise_attention.py --selected_channels {params.selected_channel_indices} --pretrained_weights {input.path_to_model} --parse_params """{params.script_params}"""'
 
@@ -123,7 +120,8 @@ rule calc_global_kNN:
     params:
         scDINO_full_pipeline = False,
         run_names = expand("channel{channel_names}_model_{model_name}", channel_names=get_channel_name_combi_list(selected_channels, channel_dict), model_name=model_name),
-        save_dir= save_dir_downstream_run
+        save_dir= save_dir_downstream_run, 
+        seed = config['meta']['seed']
     script:
         'pyscripts/global_kNN.py'
 

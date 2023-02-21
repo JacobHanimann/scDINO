@@ -171,7 +171,7 @@ def extract_and_save_feature_pipeline(args):
         if num_channels != num_in_chans_pretrained:
             print(f"Error: Number of channels in the dataset ({num_channels}) and pretrained weights ({num_in_chans_pretrained}) are different")
             print(f"Use --use_mean_patch_embedding or --use_custom_embedding_map to adjust the number of channels")
-            sys.exit(1)
+            raise ValueError(f"Number of channels in the dataset ({num_channels}) and pretrained weights ({num_in_chans_pretrained}) are different")
 
     if not args.images_are_RGB:
         if args.use_mean_patch_embedding:

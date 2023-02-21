@@ -30,6 +30,7 @@ for run_index, features in enumerate(snakemake.input["features"]):
             return labels_numbers
 
     indices = np.arange(features.shape[0])
+    np.random.seed(snakemake.params['seed'])
     np.random.shuffle(indices)
     features = features[indices]
     class_labels = np.array(class_labels)[indices]
@@ -87,7 +88,7 @@ for run_index, features in enumerate(snakemake.input["features"]):
             try:
                 top1, top2 = knn_classifier(train_features, train_labels,
                     test_features, test_labels, k, temperature, num_classes=num_classes)
-                f.write(f"{k}-NN Top1: {round(top1,2)}, Top2: {round(top2,2)}\n")
+                f.write(f"{k}-NN Top1: {round(top1)}, Top2: {round(top2)}\n")
                 #delete variables
                 del top1, top2
             except Exception as e:

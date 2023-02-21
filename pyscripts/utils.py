@@ -245,6 +245,16 @@ def get_pretrained_weights_in_chans(pretrained_weights, checkpoint_key="teacher"
             print(f"Take key {checkpoint_key} in provided checkpoint dict")
             state_dict_check = state_dict[checkpoint_key]
             num_in_chans = state_dict_check["backbone.patch_embed.proj.weight"].shape[1]
+        else:
+            try:
+                num_in_chans = state_dict["patch_embed.proj.weight"].shape[1]
+            # print the error of the exception
+            except Exception as e:
+                print(e)
+                print("in_chans not found in checkpoint dict.", state_dict.keys())
+                print("Please provide a checkpoint with in_chans in the state_dict.")
+                print("Exiting...")
+                sys.exit(1)
         return num_in_chans
 
 def load_pretrained_weights(model, pretrained_weights, checkpoint_key, model_name, patch_size):

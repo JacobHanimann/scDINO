@@ -152,8 +152,8 @@ if args.read_model_arch_dynamically:
     adjust_model_architecture(args)
 
 # ============ building network ... ============
-device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 # build model
+device = torch.device("cpu")
 selected_channels = list(map(int, args.selected_channels))
 num_in_chans_pretrained = utils.get_pretrained_weights_in_chans(args.pretrained_weights)
 model = vits.__dict__[args.arch](patch_size=args.patch_size, num_classes=0, in_chans=num_in_chans_pretrained)

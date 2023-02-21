@@ -35,16 +35,10 @@ spread = umap_params['spread']
 epochs = umap_params['epochs']
 umap_embedding = fit_umap(features, n_neighbors=15, min_dist=0.1, metric=metric, spread=spread, epochs=epochs)
 
-print(features.shape)
-print(len(class_labels))
-print(umap_embedding.shape)
-# custom_palette = sns.color_palette("viridis", len(set(class_labels)))
-# import colorcet as cc
-# custom_palette = sns.color_palette(cc.glasbey, n_colors=len(set(class_labels)))
 custom_palette = sns.color_palette("hls", len(set(class_labels)))
 
 def make_plot(embedding, labels, save_dir, file_name=file_name,name="Emb type", description="details"):
-    sns_plot = sns.scatterplot(x=embedding[:,0], y=embedding[:,1], hue=labels, s=14, palette=custom_palette, edgecolor='black', linewidth=0.05)
+    sns_plot = sns.scatterplot(x=embedding[:,0], y=embedding[:,1], hue=labels, s=14, palette=custom_palette, linewidth=0)
     plt.suptitle(f"{name}_{file_name}", fontsize=8)
     sns_plot.tick_params(labelbottom=False)
     sns_plot.tick_params(labelleft=False)
@@ -54,7 +48,7 @@ def make_plot(embedding, labels, save_dir, file_name=file_name,name="Emb type", 
     sns.move_legend(sns_plot, "upper right", title='Classes', prop={'size': 5}, title_fontsize=6, markerscale=0.5)
     sns.set(rc={"figure.figsize":(14, 10)})
     sns.despine(bottom = True, left = True)
-    sns_plot.figure.savefig(f"{save_dir}{file_name}{name}.png", dpi=200)
+    sns_plot.figure.savefig(f"{save_dir}{file_name}{name}.png", dpi=250)
     sns_plot.figure.savefig(f"{save_dir}pdf_format/{file_name}{name}.pdf")
     plt.close()
 

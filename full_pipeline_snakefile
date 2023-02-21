@@ -23,12 +23,12 @@ def get_channel_name_combi_list(selected_channels, channel_dict):
         channel_names.append(get_channel_name_combi(channel_combi,channel_dict))
     return channel_names
 
-def save_config_file(config_file_path, save_dir):
+def save_config_file(config, save_dir):
     os.makedirs(save_dir, exist_ok=True)
-    with open(config_file_path, 'r') as f:
-        config_file = f.read()
-    with open(save_dir+"/config_file_of_run.yaml", 'w') as f:
-        f.write(config_file)
+    with open(f"{save_dir}/run_config_dump.json", "w") as f:
+        json.dump(config, f)
+    with open(f"{save_dir}/run_config_dump.yaml", "w") as f:
+        yaml.dump(config, f)
 
 def load_norm_per_channel(filepath_mean_and_std_of_dataset):
     with open(filepath_mean_and_std_of_dataset) as f:
@@ -50,7 +50,7 @@ epoch_nums = [epoch_num*saveckp_freq for epoch_num in range(0,(int(epochs/saveck
 if (epochs-1) not in epoch_nums: 
     epoch_nums.append(epochs-1)
 print('Epochs for downstream analyses:', epoch_nums)
-save_config_file( "configs/scDINO_full_pipeline.yaml", save_dir_downstream_run)
+save_config_file(config, save_dir_downstream_run)
 
 #scDINO-ViTs_path_for_extract_labels
 scDINO_ViTs_for_path_extract_labels = f"{save_dir_downstream_run}/scDINO_ViTs/{ViT_name}_channel{get_channel_name_combi_list(selected_channels, channel_dict)[0]}/checkpoint0.pth"
@@ -74,8 +74,7 @@ rule visualise_attention:
         full_ViT_name = lambda wildcards: f"{ViT_name}_channel{wildcards.channel_names}"
     resources:
         mem_mb = 4000,
-        cores = 4, 
-        gpus = 1
+        cores = 4
     shell:
         'python pyscripts/visualise_attention.py --full_ViT_name {params.full_ViT_name} --selected_channels {params.selected_channel_indices} --pretrained_weights {input.path_to_model} --norm_per_channel_file {input.norm_per_channel_file} --parse_params """{params.script_params}"""'
 
@@ -107,6 +106,7 @@ rule calc_global_kNN:
         scDINO_full_pipeline = True,
         run_names = expand("{save_dir_downstream_run}/{ViT_name}_channel{channel_names}_epoch{epoch_num}", save_dir_downstream_run=save_dir_downstream_run, epoch_num=epoch_nums, ViT_name="{ViT_name}",channel_names="{channel_names}"),
         save_dir= expand("{save_dir_downstream_run}/{ViT_name}_channel{channel_names}_analyses/", save_dir_downstream_run=save_dir_downstream_run, ViT_name="{ViT_name}",channel_names="{channel_names}"),
+        seed = config['meta']['seed']
     script:
         'pyscripts/global_kNN.py'
 
@@ -126,7 +126,7 @@ rule extract_labels:
         mem_mb = 4000,
         cores = 4,
     shell: 
-        'python -m torch.distributed.launch --nproc_per_node {params.num_gpus} pyscripts/extract_image_labels.py --full_ViT_name {params.full_ViT_name} --norm_per_channel_file {input.norm_per_channel_file} --selected_channels {params.selected_channel_indices} --pretrained_weights {input.path_to_model} --parse_params """{params.script_params}"""'
+        'python -m torch.distributed.launch --nproc_per_node {params.num_gpus} pyscripts/extract_image_labels.py --full_ViT_name {params.full_ViT_name} --selected_channels {params.selected_channel_indices} --norm_per_channel_file {input.norm_per_channel_file} --pretrained_weights {input.path_to_model} --parse_params """{params.script_params}"""'
 
 
 rule compute_cls_features:
