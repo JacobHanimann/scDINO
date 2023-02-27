@@ -171,7 +171,7 @@ def extract_and_save_feature_pipeline(args):
         if num_channels != num_in_chans_pretrained:
             print(f"Error: Number of channels in the dataset ({num_channels}) and pretrained weights ({num_in_chans_pretrained}) are different")
             print(f"Use --use_mean_patch_embedding or --use_custom_embedding_map to adjust the number of channels")
-            sys.exit(1)
+            raise ValueError(f"Number of channels in the dataset ({num_channels}) and pretrained weights ({num_in_chans_pretrained}) are different")
 
     if not args.images_are_RGB:
         if args.use_mean_patch_embedding:
@@ -189,10 +189,8 @@ def extract_and_save_feature_pipeline(args):
     if utils.get_rank() == 0:
         features = nn.functional.normalize(features, dim=1, p=2)
     
-    classes = [s for s in dataset_total.classes]
-    labels = [classes[dataset_total.targets[i]] for i in index_all]
     image_names= [dataset_total.samples[i][0] for i in index_all]
-
+    labels = [utils.fetch_foldername_of_img_location(dataset_total,i, args.folder_depth_for_labels) for i in index_all]
     return features, labels, image_names
 
 @torch.no_grad()
@@ -285,6 +283,7 @@ if __name__ == '__main__':
     parser.add_argument("--train_datasetsplit_fraction", default=0.8, type=float, help="when using scDINO full pipeline")
     parser.add_argument("--test_datasetsplit_fraction", default=0.8, type=float, help="when using downstream analysis only")
     parser.add_argument('--seed', default=42, type=int, help='Random seed.')
+    parser.add_argument('--folder_depth_for_labels', default=0, type=int, help='Folder depth for labels. 0 means that the labels are the folder names where the images are stored. 1 means one level above and so on. e.g  path/to/images/labelwhen3/labelwhen2/labelwhen1/labelwhen0/image.tiff')
 
     #save settings
     parser.add_argument('--output_dir', default='.', type=str)
@@ -323,8 +322,6 @@ if __name__ == '__main__':
 
     #compute CLS features and save them
     features, labels, image_names = extract_and_save_feature_pipeline(args)
-
-
     # save features and labels as files
     if dist.get_rank() == 0:
 

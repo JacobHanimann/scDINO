@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
 from sklearn import preprocessing
+import topo as tp
 import umap
 import os
 import seaborn as sns
@@ -38,17 +39,17 @@ umap_embedding = fit_umap(features, n_neighbors=15, min_dist=0.1, metric=metric,
 custom_palette = sns.color_palette("hls", len(set(class_labels)))
 
 def make_plot(embedding, labels, save_dir, file_name=file_name,name="Emb type", description="details"):
-    sns_plot = sns.scatterplot(x=embedding[:,0], y=embedding[:,1], hue=labels, s=14, palette=custom_palette, linewidth=0)
+    sns_plot = sns.scatterplot(x=embedding[:,0], y=embedding[:,1], hue=labels, s=14, palette=custom_palette, linewidth=0, alpha=0.9)
     plt.suptitle(f"{name}_{file_name}", fontsize=8)
     sns_plot.tick_params(labelbottom=False)
     sns_plot.tick_params(labelleft=False)
     sns_plot.tick_params(bottom=False)
     sns_plot.tick_params(left=False)
     sns_plot.set_title("CLS Token embedding of "+str(len(labels))+" cells with a dimensionality of "+str(features.shape[1])+" \n"+description, fontsize=6)
-    sns.move_legend(sns_plot, "upper right", title='Classes', prop={'size': 5}, title_fontsize=6, markerscale=0.5)
+    sns.move_legend(sns_plot, "lower left", title='Classes', prop={'size': 5}, title_fontsize=6, markerscale=0.5)
     sns.set(rc={"figure.figsize":(14, 10)})
     sns.despine(bottom = True, left = True)
-    sns_plot.figure.savefig(f"{save_dir}{file_name}{name}.png", dpi=250)
+    sns_plot.figure.savefig(f"{save_dir}{file_name}{name}.png", dpi=325)
     sns_plot.figure.savefig(f"{save_dir}pdf_format/{file_name}{name}.pdf")
     plt.close()
 
@@ -59,8 +60,6 @@ make_plot(umap_embedding, class_labels, save_dir=save_dir, file_name=file_name, 
 
 ########################### Additional plots from https://topometry.readthedocs.io/en/latest/ ###########################
 if snakemake.params['topometry_plots']:
-
-    import topo as tp
 
     os.makedirs(f"{save_dir}/topometry_plots", exist_ok=True)
     os.makedirs(f"{save_dir}/topometry_plots/pdf_format", exist_ok=True)

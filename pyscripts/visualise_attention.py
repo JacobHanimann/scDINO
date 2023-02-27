@@ -250,7 +250,7 @@ def prepare_og_image(image, args, channel):
 
 dataset_total =  datasets.ImageFolder(os.path.join(args.dataset_dir))
 
-classes = set([s for s in dataset_total.classes])
+classes = utils.fetch_all_folder_names_of_folder_depth(dataset_total, folder_depth=args.folder_depth_for_labels)
 
 def get_channel_name_combi(channel_combi, channel_dict):
             name_of_channel_combi = ""
@@ -279,13 +279,18 @@ for class_name in classes:
     except:
         pass
 
-classes_dict = dataset_total.class_to_idx
-random.seed(args.seed)
+# classes_dict = dataset_total.class_to_idx
+# random.seed(args.seed)
+
+# classes_dict = {class_name: i for i, class_name in enumerate(classes)}
 
 print('Computing and saving attention images...')
-for class_name, class_number in classes_dict.items():
-    class_torch = torch.tensor([class_number])
-    class_indices = (torch.tensor(dataset_total.targets)[..., None] == class_torch).any(-1).nonzero(as_tuple=True)[0]
+for class_name in classes:
+# for class_name, class_number in classes_dict.items():
+    # class_torch = torch.tensor([class_number])
+    class_indices = [i for i, x in enumerate(dataset_total.imgs) if class_name == x[0].split('/')[-args.folder_depth_for_labels-2]]
+    print(f"Computing attention images for class {class_name} with {len(class_indices)} images")
+    print(class_indices)
     if args.scDINO_full_pipeline: #subsample from val_indices
         validation_split = float(1-args.train_datasetsplit_fraction)
         shuffle_dataset = True

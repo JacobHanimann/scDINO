@@ -211,23 +211,18 @@ def fetch_foldername_of_img_location_donor(dataset, index):
     img_folder_name = img_path[-4]
     return img_folder_name
 
-def fetch_foldername_of_img_location(dataset, index):
-    return dataset.imgs[index][0].split("/")[-2]
+def fetch_foldername_of_img_location(dataset, index, folder_depth=0):
+    return dataset.imgs[index][0].split("/")[(-folder_depth-2)]
 
 def list_folders_in_directory(directory):
     return [f.name for f in os.scandir(directory) if f.is_dir() ]
 
-def fetch_all_folder_names_of_img_locations(dataset, index=1):
+def fetch_all_folder_names_of_folder_depth(dataset, index=1, folder_depth=0):
     path = dataset.imgs[index][0]
-    path = "/".join(path.split("/")[:-2])
+    path = "/".join(path.split("/")[:(-folder_depth-2)])
     class_names = list_folders_in_directory(path)
     return class_names
-    
-def create_class_to_idx_for_class_names(class_names):
-    class_to_idx = {}
-    for i in range(len(class_names)):
-        class_to_idx[class_names[i]] = i
-    return class_to_idx
+
 
 #adapted from https://discuss.pytorch.org/t/problem-training-gamma-correction/60800/2
 # There are two tricks here. The first is to handle negative inputs by odd symmetry 6; f(-x) is computed as -f(x). The second is to handle zero or close-to-zero inputs by adding a small ‘epsilon’ value to ensure numerical stability.
@@ -292,42 +287,6 @@ def load_pretrained_weights(model, pretrained_weights, checkpoint_key, model_nam
             url = "dino_resnet50_pretrain/dino_resnet50_pretrain.pth"
         else:
             print("There is no reference weights available for this model => We use random weights.")
-
-# def load_pretrained_weights_new(model, pretrained_weights, checkpoint_key, model_name, patch_size):
-#     if os.path.isfile(pretrained_weights):
-#         state_dict = torch.load(pretrained_weights, map_location="cpu")
-#         if checkpoint_key is not None and checkpoint_key in state_dict:
-#             print(f"Take key {checkpoint_key} in provided checkpoint dict")
-#             state_dict = state_dict[checkpoint_key]
-#         # remove `module.` prefix
-#         state_dict = {k.replace("module.", ""): v for k, v in state_dict.items()}
-#         # remove `backbone.` prefix induced by multicrop wrapper
-#         state_dict = {k.replace("backbone.", " "): v for k, v in state_dict.items()}
-#         msg = model.load_state_dict(state_dict, strict=False)
-#         print('Pretrained weights found at {} and loaded with msg: {}'.format(pretrained_weights, msg))
-#     else:
-#         print("Please use the `--pretrained_weights` argument to indicate the path of the checkpoint to evaluate.")
-#         url = None
-#         if model_name == "vit_small" and patch_size == 16:
-#             url = "dino_deitsmall16_pretrain/dino_deitsmall16_pretrain.pth"
-#         elif model_name == "vit_small" and patch_size == 8:
-#             url = "dino_deitsmall8_pretrain/dino_deitsmall8_pretrain.pth"
-#         elif model_name == "vit_base" and patch_size == 16:
-#             url = "dino_vitbase16_pretrain/dino_vitbase16_pretrain.pth"
-#         elif model_name == "vit_base" and patch_size == 8:
-#             url = "dino_vitbase8_pretrain/dino_vitbase8_pretrain.pth"
-#         elif model_name == "xcit_small_12_p16":
-#             url = "dino_xcit_small_12_p16_pretrain/dino_xcit_small_12_p16_pretrain.pth"
-#         elif model_name == "xcit_small_12_p8":
-#             url = "dino_xcit_small_12_p8_pretrain/dino_xcit_small_12_p8_pretrain.pth"
-#         elif model_name == "xcit_medium_24_p16":
-#             url = "dino_xcit_medium_24_p16_pretrain/dino_xcit_medium_24_p16_pretrain.pth"
-#         elif model_name == "xcit_medium_24_p8":
-#             url = "dino_xcit_medium_24_p8_pretrain/dino_xcit_medium_24_p8_pretrain.pth"
-#         elif model_name == "resnet50":
-#             url = "dino_resnet50_pretrain/dino_resnet50_pretrain.pth"
-#         else:
-#             print("There is no reference weights available for this model => We use random weights.")
 
 
 def load_pretrained_linear_weights(linear_classifier, model_name, patch_size):
@@ -700,8 +659,12 @@ def init_distributed_mode(args):
     elif torch.cuda.is_available():
         print('Will run the code on one GPU.')
         args.rank, args.gpu, args.world_size = 0, 0, 1
-        os.environ['MASTER_ADDR'] = '127.0.0.1'
-        os.environ['MASTER_PORT'] = '29500'
+        # os.environ['MASTER_ADDR'] = '127.0.0.1'
+        #define another random adress to avoid address already in use error
+        os.environ['MASTER_ADDR'] = '127.0.0.{}'.format(random.randint(1, 255))
+        # os.environ['MASTER_PORT'] = '29500'
+        os.environ['MASTER_PORT'] = str(random.randint(29500, 30000))
+        print('MASTER_ADDR: {}'.format(os.environ['MASTER_ADDR']))
     else:
         print('Does not support training without GPU.')
         sys.exit(1)

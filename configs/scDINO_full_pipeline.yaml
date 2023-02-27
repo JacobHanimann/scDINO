@@ -2,6 +2,7 @@ meta:
   name_of_run: "name_of_run"
   output_dir: "/outputdir"
   dataset_dir: "/datasetdir"
+  folder_depth_for_labels: 0 # 0 is the folder where the images are, 1 is the folder above, etc.
   train_datasetsplit_fraction: 0.8
   seed: 40
   images_are_RGB: False
