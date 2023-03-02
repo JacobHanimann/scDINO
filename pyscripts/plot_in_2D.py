@@ -3,7 +3,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
 from sklearn import preprocessing
-import topo as tp
 import umap
 import os
 import seaborn as sns
@@ -60,6 +59,8 @@ make_plot(umap_embedding, class_labels, save_dir=save_dir, file_name=file_name, 
 
 ########################### Additional plots from https://topometry.readthedocs.io/en/latest/ ###########################
 if snakemake.params['topometry_plots']:
+    
+    import topo as tp
 
     os.makedirs(f"{save_dir}/topometry_plots", exist_ok=True)
     os.makedirs(f"{save_dir}/topometry_plots/pdf_format", exist_ok=True)
