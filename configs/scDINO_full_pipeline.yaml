@@ -6,7 +6,7 @@ meta:
   train_datasetsplit_fraction: 0.8
   seed: 40
   images_are_RGB: False
-  channel_dict: { 0: "aTub", 1: "BF", 2: "DAPI", 3: "Oct4", 4: "PE" }
+  channel_dict: { 0: "aTub", 1: "BF", 2: "DAPI", 3: "Oct4", 4: "PE" } #do not use underscore or slash in channel name
   selected_channel_combination_per_run: ["01234", "0", "1", "2", "3", "4"]
   center_crop: 0 #0 is no center crop
 
