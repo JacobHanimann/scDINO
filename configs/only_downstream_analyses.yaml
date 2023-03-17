@@ -4,9 +4,9 @@ meta:
   dataset_dir: "datasetdir"
   folder_depth_for_labels: 0 # 0 is the folder where the images are, 1 is the folder above, etc.
   test_datasetsplit_fraction: 0.1
-  seed: 40 # should match scDINO seed if you want to use the same train/test split
+  seed: 40 #should match scDINO seed if you want to use the same train/test split
   images_are_RGB: False
-  channel_dict: { 0: "APC", 1: "BF", 2: "DAPI", 3: "GREEN", 4: "PE" }
+  channel_dict: { 0: "APC", 1: "BF", 2: "DAPI", 3: "GREEN", 4: "PE" } #do not use underscore or slash in channel name
   selected_channel_combination_per_run: ["01234", "0", "1", "2", "3", "4"]
   center_crop: 0 #0 is no center crop
 compute_cls_features:
