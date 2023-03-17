@@ -13,7 +13,7 @@ class ReturnIndexDataset(datasets.ImageFolder):
             if snakemake.params['center_crop'] != 0:
                 image = torch.from_numpy(image).permute(2, 0, 1)
                 transform = transforms.CenterCrop(snakemake.params['center_crop'])
-                tensor = transform(tensor)
+                tensor = transform(image)
                 image = image.permute(1, 2, 0)
                 image = image.numpy()
             image = utils.normalize_numpy_0_to_1(image)
