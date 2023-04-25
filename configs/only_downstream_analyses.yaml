@@ -7,7 +7,7 @@ meta:
   seed: 40 #should match scDINO seed if you want to use the same train/test split
   images_are_RGB: False
   channel_dict: { 0: "APC", 1: "BF", 2: "DAPI", 3: "GREEN", 4: "PE" } #do not use underscore or slash in channel name
-  selected_channel_combination_per_run: ["01234", "0", "1", "2", "3", "4"]
+  selected_channel_combination_per_run: ["01234", "0", "1", "2", "3", "4"] #01234 is all 5 channels, 0 is only APC, 1 is only BF, etc.
   center_crop: 0 #0 is no center crop
 compute_cls_features:
   use_weighted_sampler: False # if False, valdataset is used defined in meta
