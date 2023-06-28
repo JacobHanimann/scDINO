@@ -26,7 +26,7 @@ train_scDINO:
     momentum_teacher: 0.996
     use_bn_in_head: False
     warmup_teacher_temp: 0.04
-    techer_temp: 0.04
+    teacher_temp: 0.04
     warmup_teacher_temp_epochs: 0
     use_fp16: True
     weight_decay: 0.04
@@ -34,7 +34,7 @@ train_scDINO:
     clip_grad: 3
     freeze_last_layer: 1
     lr: 0.0005
-    warump_epochs: 5
+    warmup_epochs: 5
     min_lr: 0.000001
     optimizer: "adamw"
     drop_path_rate: 0.1
