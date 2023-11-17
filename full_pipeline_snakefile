@@ -54,7 +54,7 @@ print('Epochs for downstream analyses:', epoch_nums)
 save_config_file(config, save_dir_downstream_run)
 
 #scDINO-ViTs_path_for_extract_labels
-scDINO_ViTs_for_path_extract_labels = f"{save_dir_downstream_run}/scDINO_ViTs/{ViT_name}_channel{get_channel_name_combi_list(selected_channels, channel_dict)[0]}/checkpoint0.pth"
+#scDINO_ViTs_for_path_extract_labels = f"{save_dir_downstream_run}/scDINO_ViTs/{ViT_name}_channel{get_channel_name_combi_list(selected_channels, channel_dict)[0]}/checkpoint0.pth"
 
 ##### RULES #####
 rule all:
@@ -82,7 +82,7 @@ rule visualise_attention:
 rule plot_in_2D:
     input:
         features = expand("{save_dir_downstream_run}/{ViT_name}_channel{channel_names}_analyses/CLS_features/epoch{epoch_num}_features.csv", save_dir_downstream_run="{save_dir_downstream_run}", ViT_name="{ViT_name}", channel_names="{channel_names}", epoch_num="{epoch_num}"),
-        class_labels = "{save_dir_downstream_run}/class_labels.csv"
+        class_labels = "{save_dir_downstream_run}/{ViT_name}_channel{channel_names}_analyses/class_labels.csv"
     output:
         "{save_dir_downstream_run}/{ViT_name}_channel{channel_names}_analyses/embedding_plots/epoch{epoch_num}_umap.png"
     resources:
@@ -97,7 +97,7 @@ rule plot_in_2D:
 rule calc_global_kNN:
     input:
         features = expand("{save_dir_downstream_run}/{ViT_name}_channel{channel_names}_analyses/CLS_features/epoch{epoch_num}_features.csv", save_dir_downstream_run=save_dir_downstream_run, epoch_num=epoch_nums, ViT_name="{ViT_name}",channel_names="{channel_names}"),
-        class_labels = "{save_dir_downstream_run}/class_labels.csv"
+        class_labels = "{save_dir_downstream_run}/{ViT_name}_channel{channel_names}_analyses/class_labels.csv"
     output: 
         "{save_dir_downstream_run}/{ViT_name}_channel{channel_names}_analyses/kNN/global_kNN.txt"
     resources:
@@ -113,15 +113,15 @@ rule calc_global_kNN:
 
 rule extract_labels:
     input:
-        path_to_model = scDINO_ViTs_for_path_extract_labels, 
+        path_to_model = "{save_dir_downstream_run}/scDINO_ViTs/{ViT_name}_channel{channel_names}/checkpoint0.pth", 
         norm_per_channel_file = f"{save_dir_downstream_run}/mean_and_std_of_dataset.txt"
     output:
-        labels = expand("{save_dir_downstream_run}/{file_name}.csv", file_name=['class_labels','image_paths'], save_dir_downstream_run="{save_dir_downstream_run}")
+        labels = expand("{save_dir_downstream_run}/{ViT_name}_channel{channel_names}_analyses/{file_name}.csv", file_name=['class_labels','image_paths'], save_dir_downstream_run="{save_dir_downstream_run}", ViT_name="{ViT_name}", channel_names="{channel_names}"),
     params: 
         script_params = {**config['meta'], **config['downstream_analyses']['compute_cls_features'], **{"scDINO_full_pipeline":True},**config['train_scDINO'],**config['train_scDINO']['hyperparameters']},
         num_gpus = config['downstream_analyses']['compute_cls_features']['num_gpus'],
-        selected_channel_indices= selected_channels[0],
-        full_ViT_name = scDINO_ViTs_for_path_extract_labels
+        selected_channel_indices= lambda wildcards: get_channel_number_combi(wildcards.channel_names, channel_dict),
+        full_ViT_name = lambda wildcards: f"{ViT_name}_channel{wildcards.channel_names}_analyses/"
     resources:
         gpus = config['downstream_analyses']['compute_cls_features']['num_gpus'],
         mem_mb = 4000,
