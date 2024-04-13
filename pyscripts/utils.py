@@ -75,6 +75,10 @@ def normalize_tensor_per_channel(x):
         print("x_min",x_min)
         print("diff_min_max",diff_min_max)
         print("x",x.shape)
+        # replace x_max 0 values with 1
+        for i in range(len(x_max[0][0])):
+            if x_max[0][0][i] == 0:
+                x_max[0][0][i] = 1
     x = (x - x_min)/(x_max-x_min)
     if check_nan(x):
         print("x contains nan after normalization")
@@ -105,6 +109,10 @@ def normalize_numpy_0_to_1(x):
         print("x_min",x_min)
         print("diff_min_max",diff_min_max)
         print("x",x.shape)
+        # replace x_max 0 values with 1
+        for i in range(len(x_max[0][0])):
+            if x_max[0][0][i] == 0:
+                x_max[0][0][i] = 1
     x = (x - x_min)/(x_max-x_min)
     if check_nan(x):
         print("x contains nan after normalization")
