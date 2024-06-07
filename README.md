@@ -1,13 +1,17 @@
 # Self-Supervised Vision Transformers for multi-channel single-cells images
 
 Application of DINO for automated microscopy-derived fluorescent imaging datasets of single cells and instructions on how to run subsequent downstream analyses with trained Vision Transformers (ViTs) of non-RGB multi-channel images. See **Emerging Properties in Self-Supervised Vision Transformers** for the original DINO implementation and **Self-supervised vision transformers accurately decode cellular state heterogeneity** for the adaption described here.
-[[`DINO arXiv`](https://arxiv.org/abs/2104.14294)] [[`bioRxiv`](https://www.biorxiv.org/content/10.1101/2023.01.16.524226v1)]
+[[`DINO arXiv`](https://arxiv.org/abs/2104.14294)] [[`scDINO bioRxiv`](https://www.biorxiv.org/content/10.1101/2023.01.16.524226v1)]
 
 <div align="center">
   <img width="100%" alt="DINO illustration" src=".github/fig1_github_workflow.png">
 </div>
 
 <br>
+
+Check out our recent publication, **Cellular Architecture Shapes the Naïve T Cell Response**, in Science Magazine. We used scDINO to identify distinct T cell phenotypes by examining over 30,000 single-cell crops of CD4 and CD8 T cells from healthy donors. We trained ViT-S/16 models exclusively on CD3 single-channel images, and downstream analysis to investigate the phenotypic heterogeneity was performed by clustering the CLS-Token latent space and visualizing it with the TopOMetry framework [[`Science`](https://www.science.org/doi/10.1126/science.adh8967)].
+
+Further demonstration of the usefulness of the DINO framework for image-based biological discovery is presented in the preprint, **Unbiased single-cell morphology with self-supervised vision transformers**. This work demonstrates that self-supervised vision transformers can encode cellular morphology at various scales, from subcellular to multicellular [[`bioRxiv`](https://www.biorxiv.org/content/10.1101/2023.06.16.545359v1)].
 
 ## This codebase provides:
 
