@@ -11,6 +11,16 @@ Application of DINO for automated microscopy-derived fluorescent imaging dataset
 
 Check out our recent publication, **Cellular Architecture Shapes the Naïve T Cell Response**, in Science Magazine. We used scDINO to identify distinct T cell phenotypes by examining over 30,000 single-cell crops of CD4 and CD8 T cells from healthy donors. We trained ViT-S/16 models exclusively on CD3 single-channel images, and downstream analysis to investigate the phenotypic heterogeneity was performed by clustering the CLS-Token latent space and visualizing it with the TopOMetry framework [[`Science`](https://www.science.org/doi/10.1126/science.adh8967)].
 
+<div align="center">
+  <img width="100%" alt="Science Sfig1A" src=".github/Science_Sfig1A.png">
+</div>
+
+<div align="center">
+  <img width="100%" alt="Science Sfig1A" src=".github/Science_Sfig1D.png">
+</div>
+
+<br>
+
 Further demonstration of the usefulness of the DINO framework for image-based biological discovery is presented in the preprint, **Unbiased single-cell morphology with self-supervised vision transformers**. This work demonstrates that self-supervised vision transformers can encode cellular morphology at various scales, from subcellular to multicellular [[`bioRxiv`](https://www.biorxiv.org/content/10.1101/2023.06.16.545359v1)].
 
 ## This codebase provides:
