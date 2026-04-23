@@ -2,6 +2,7 @@ import pandas as pd
 import torch
 from sklearn import preprocessing
 import numpy as np
+import torch.nn.functional as F
 
 #iterate through all runs and save the results in one file
 for run_index, features in enumerate(snakemake.input["features"]):
@@ -88,7 +89,24 @@ for run_index, features in enumerate(snakemake.input["features"]):
             try:
                 top1, top2 = knn_classifier(train_features, train_labels,
                     test_features, test_labels, k, temperature, num_classes=num_classes)
-                f.write(f"{k}-NN Top1: {round(top1)}, Top2: {round(top2)}\n")
+                f.write(f"{k}-NN Top1: {round(top1, ndigits=2)}, Top2: {round(top2,ndigits=2)}\n")
+                #delete variables
+                del top1, top2
+            except Exception as e:
+                f.write("Error: "+str(e)+"\n")             
+        f.write("--------------------------------------------------\n")
+# added by RP to get double normalisation of features as for cellprofiler!
+    with open(save_dir+"/kNN/global_kNN_L2norm.txt", 'a') as f:
+        f.write("Run: "+run_name+"\n")
+        for k in neighbors:
+            try:
+                feat_train_t = F.normalize(train_features, p = float(2), dim = 0)
+                feat_test_t = F.normalize(test_features, p = float(2), dim = 0)
+                feat_train_t = F.normalize(train_features, p = float(2), dim = 1)
+                feat_test_t = F.normalize(test_features, p = float(2), dim = 1)
+                top1, top2 = knn_classifier(feat_train_t, train_labels,
+                    feat_test_t, test_labels, k, temperature, num_classes=num_classes)
+                f.write(f"{k}-NN Top1: {round(top1, ndigits=2)}, Top2: {round(top2,ndigits=2)}\n")
                 #delete variables
                 del top1, top2
             except Exception as e:

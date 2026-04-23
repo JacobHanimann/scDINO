@@ -494,8 +494,8 @@ class DataAugmentationDINO(object):
             flip_gamma_brightness = transforms.Compose([
                 transforms.RandomHorizontalFlip(p=0.5),
                 transforms.RandomVerticalFlip(p=0.5),
-                #utils.AdjustGamma_custom(0.8),
-                utils.AdjustBrightness(0.8),
+                utils.AdjustGamma_custom(0.5),
+                utils.AdjustBrightness(0.5),
             ])
             normalize = transforms.Compose([
                 # utils.normalize_0_to_1(),
@@ -507,6 +507,8 @@ class DataAugmentationDINO(object):
                 transforms.RandomResizedCrop(224, scale=global_crops_scale, interpolation=transforms.InterpolationMode.BICUBIC),
                 flip_gamma_brightness,
                 utils.GaussianBlur_forGreyscaleMultiChan(1.0),
+                utils.RandomIntensityShift(0.2),
+                utils.RemoveChannel(0.2),
                 normalize,
             ])
             # second global crop
@@ -515,6 +517,8 @@ class DataAugmentationDINO(object):
                 flip_gamma_brightness,
                 utils.GaussianBlur_forGreyscaleMultiChan(0.1),
                 utils.Solarization_forGreyscaleMultiChan(0.2),
+                utils.RandomIntensityShift(0.2),
+                utils.RemoveChannel(0.2),
                 normalize,
             ])
             # transformation for the local small crops
@@ -523,6 +527,8 @@ class DataAugmentationDINO(object):
                 transforms.RandomResizedCrop(96, scale=local_crops_scale, interpolation=transforms.InterpolationMode.BICUBIC),
                 flip_gamma_brightness,
                 utils.GaussianBlur_forGreyscaleMultiChan(0.5),
+                utils.RandomIntensityShift(0.2),
+                utils.RemoveChannel(0.2),
                 normalize,
             ])
 

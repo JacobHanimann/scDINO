@@ -75,10 +75,6 @@ def normalize_tensor_per_channel(x):
         print("x_min",x_min)
         print("diff_min_max",diff_min_max)
         print("x",x.shape)
-        # replace x_max 0 values with 1
-        for i in range(len(x_max[0][0])):
-            if x_max[0][0][i] == 0:
-                x_max[0][0][i] = 1
     x = (x - x_min)/(x_max-x_min)
     if check_nan(x):
         print("x contains nan after normalization")
@@ -94,8 +90,10 @@ class normalize_tensor_0_to_1(object):
 
 
 def normalize_numpy_0_to_1(x):
-    x_min = x.min(axis=(0,1), keepdims=True)
-    x_max = x.max(axis=(0,1), keepdims=True)
+    #x_min = x.min(axis=(0,1), keepdims=True)
+    #x_max = x.max(axis=(0,1), keepdims=True)
+    x_min = np.nanmin(x, axis=(0, 1), keepdims=True) # rp edit, to stop nan's being used in calc. 19.03.2024
+    x_max = np.nanmax(x, axis=(0, 1), keepdims=True)
     diff_min_max = x_max - x_min
     if check_nan(diff_min_max):
         print("diff_min_max is nan")
@@ -109,10 +107,6 @@ def normalize_numpy_0_to_1(x):
         print("x_min",x_min)
         print("diff_min_max",diff_min_max)
         print("x",x.shape)
-        # replace x_max 0 values with 1
-        for i in range(len(x_max[0][0])):
-            if x_max[0][0][i] == 0:
-                x_max[0][0][i] = 1
     x = (x - x_min)/(x_max-x_min)
     if check_nan(x):
         print("x contains nan after normalization")
@@ -211,6 +205,31 @@ class AdjustGamma_custom(object):
             return x
         else:
             return x
+
+# some additional augmentations by RP
+class RandomIntensityShift(object):
+    def __init__(self, p, shift_range=(-0.3, 0.3)):
+        self.p = p
+        self.shift_range = shift_range
+    def __call__(self, x):
+        if random.random() < self.p:
+            # Apply a different random intensity shift to each channel
+            for channel in range(x.shape[0]):
+                shift_value = random.uniform(*self.shift_range)
+                x[channel] = x[channel] + shift_value
+            return x
+        else:
+            return x    
+
+class RemoveChannel(object):
+    def __init__(self, p):
+        self.p = p
+    def __call__(self, img):
+        if np.random.rand() < self.p:
+            num_channels = img.shape[0]
+            channel_to_blacken = np.random.choice(np.arange(num_channels), 1, replace=False)[0]
+            img[channel_to_blacken] = torch.zeros(1, *img.shape[1:])
+        return img    
 
 
 def fetch_foldername_of_img_location_donor(dataset, index):

@@ -176,6 +176,7 @@ def extract_and_save_feature_pipeline(args):
     if not args.images_are_RGB:
         if args.use_mean_patch_embedding:
             average_conv2d_weights = torch.mean(model.patch_embed.proj.weight,1, keepdim=True)
+            #scaled_conv2d_weights = (3/num_channels) * average_conv2d_weights # added this rp 2024.10.02
             conv2d_weights_per_chan = average_conv2d_weights.repeat(1,num_channels,1,1)
             model.patch_embed.proj.weight = nn.Parameter(conv2d_weights_per_chan)
         elif args.use_custom_embedding_map:
@@ -199,6 +200,8 @@ def extract_features(model, data_loader, use_cuda=True, multiscale=False):
     features = None
     indices_all = []
     for samples, index in metric_logger.log_every(data_loader, 10):
+        print(samples.type()) #rp added
+        print(index.type())
         samples = samples.cuda(non_blocking=True)
         index = index.cuda(non_blocking=True)
         if multiscale:
